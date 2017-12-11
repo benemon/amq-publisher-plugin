@@ -2,9 +2,7 @@
 
 ### What is it?
 
-A set of tasks and steps for Jenkins which publish:
-
-- An amqPublisher pipeline step to allow a user to publish bespoke information from a Pipeline to a given Kafka topic
+A basic step for Jenkins which allows a user to publish bespoke information from a Pipeline to a given AMQ destination.
 
 ### Usage
 
@@ -24,4 +22,3 @@ To publish, simply add a step with the following syntax:
 `amqPublisher ( destination: <topic>, messageBody: <body> )`
 
 The `destination` parameter is optional, and if not provided, will publish payloads to the default destination, if defined.
-
