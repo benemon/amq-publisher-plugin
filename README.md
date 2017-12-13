@@ -19,6 +19,6 @@ Configure using Global System Configuration. Options for the following are provi
 
 To publish, simply add a step with the following syntax:
 
-`amqPublisher ( destination: <topic>, headers: <body> )`
+`amqPublisher ( destination: <queue/topic>, properties: [:], message: <body> )`
 
 The `destination` parameter is optional, and if not provided, will publish payloads to the com.redhat.ukiservices.jenkins.amq.steps.AMQPublisherStep.default destination, if defined.
