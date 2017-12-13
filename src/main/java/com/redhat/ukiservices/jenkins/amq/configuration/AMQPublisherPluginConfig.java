@@ -23,23 +23,33 @@ import org.kohsuke.stapler.StaplerRequest;
 
 @Extension
 public class AMQPublisherPluginConfig extends GlobalConfiguration {
-
     /**
-     * A comma separated list of AMQ hosts (hostname:port)
+     * A comma separated list of AMQ connectionString (hostname:port)
      */
-    private String hosts;
+    private String connectionString;
 
     /**
-     * A string for the default destination for published payloads
+     * A string for the com.redhat.ukiservices.jenkins.amq.steps.AMQPublisherStep.default destination for published payloads
      */
     private String defaultDestination;
 
-    public String getHosts() {
-        return hosts;
+
+    private String credentialId;
+
+    /**
+     * Default Constructor
+     */
+    public AMQPublisherPluginConfig() {
+        load();
     }
 
-    public void setHosts(String hosts) {
-        this.hosts = hosts;
+
+    public String getConnectionString() {
+        return connectionString;
+    }
+
+    public void setConnectionString(String connectionString) {
+        this.connectionString = connectionString;
     }
 
     public String getDefaultDestination() {
@@ -51,16 +61,9 @@ public class AMQPublisherPluginConfig extends GlobalConfiguration {
     }
 
     /**
-     * Default Constructor
-     */
-    public AMQPublisherPluginConfig() {
-        load();
-    }
-
-    /**
-     * Get the current Kafka Global Configuration
+     * Get the current AMQ Global Configuration
      *
-     * @return the Kafka Configuration, or {@code null} if Jenkins has been shut down
+     * @return the AMQ Configuration, or {@code null} if Jenkins has been shut down
      */
     public static AMQPublisherPluginConfig get() {
         Jenkins j = Jenkins.getInstance();

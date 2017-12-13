@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<com.redhat.ukiservices.jenkins.amq.configuration.AMQPublisherPluginConfig plugin="amq-publisher-plugin@1.0-SNAPSHOT">
+    <connectionString>amqp://127.0.0.1:5672</connectionString>
+    <defaultDestination>jenkinsQueue</defaultDestination>
+</com.redhat.ukiservices.jenkins.amq.configuration.AMQPublisherPluginConfig>

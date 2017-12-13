@@ -1,4 +1,4 @@
-<?jelly escape-by-default='true'?>
+<?jelly escape-by-com.redhat.ukiservices.jenkins.amq.steps.AMQPublisherStep.default='true'?>
 <div>
     TODO
 </div>

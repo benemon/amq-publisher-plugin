@@ -2,41 +2,51 @@ package com.redhat.ukiservices.jenkins.amq.steps;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
-import net.sf.json.JSONObject;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.Nonnull;
+import javax.jms.*;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import static com.redhat.ukiservices.jenkins.amq.configuration.AMQPublisherPluginConfig.get;
+
 public class AMQPublisherStep extends Step {
 
     private static Logger log = Logger.getLogger(AMQPublisherStep.class.getName());
 
-    private final String topic;
+    private final String destination;
 
-    private final Map<String, String> payload;
+    private final Map<String, Object> properties;
+
+    private final String message;
 
     @DataBoundConstructor
-    public AMQPublisherStep(String topic, Map<String, String> payload) {
-        this.payload = payload;
-        this.topic = topic;
+    public AMQPublisherStep(String destination, Map<String, Object> properties, String message) {
+        this.destination = destination;
+        this.properties = properties;
+        this.message = message;
     }
 
-    public String getTopic() {
-        return topic;
+    public String getDestination() {
+        return destination;
     }
 
-    public Map<String, String> getPayload() {
-        return payload;
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     @Override
     public StepExecution start(StepContext stepContext) throws Exception {
-        return new Execution(topic, payload, stepContext);
+        return new Execution(destination, properties, message, stepContext);
     }
 
     @Extension
@@ -55,28 +65,51 @@ public class AMQPublisherStep extends Step {
         @Nonnull
         @Override
         public String getDisplayName() {
-            return "AMQ Publisher";
+            return "AMQ Publisher Step";
         }
     }
 
     public static class Execution extends SynchronousStepExecution<Void> {
 
         private static final long serialVersionUID = 1L;
-        private transient final String topic;
-        private transient final Map<String, String> payload;
+        private transient final String destination;
+        private transient final Map<String, Object> properties;
+        private transient final String message;
 
-        Execution(String topic, Map<String, String> payload, StepContext context) {
+        Execution(String destination, Map<String, Object> properties, String message, StepContext context) {
             super(context);
 
-            this.topic = topic;
-            this.payload = payload;
+            this.destination = destination;
+            this.properties = properties;
+            this.message = message;
+
         }
 
         @Override
         protected Void run() throws Exception {
 
-            JSONObject publishedContent = new JSONObject();
-            publishedContent.putAll(payload);
+            // Create a ConnectionFactory
+            ConnectionFactory connectionFactory = new JmsConnectionFactory(get().getConnectionString());
+
+            // try-with-resources for the actual connection
+            try (
+                    Connection connection = connectionFactory.createConnection();
+                    Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            ) {
+                Queue queue = session.createQueue(destination != null ? destination : get().getDefaultDestination());
+                MessageProducer producer = session.createProducer(queue);
+                TextMessage txtMsg = session.createTextMessage(this.message);
+
+                // Convert any properties in map form to message properties
+                if (properties != null) {
+                    for (String key : properties.keySet()) {
+                        Object value = properties.get(key);
+                        txtMsg.setObjectProperty(key, value);
+                    }
+                }
+
+                producer.send(txtMsg);
+            }
 
             return null;
         }

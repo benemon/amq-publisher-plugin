@@ -15,6 +15,8 @@
 
 package com.redhat.ukiservices.jenkins.amq.steps;
 
+import com.redhat.ukiservices.jenkins.amq.configuration.AMQPublisherPluginConfig;
+import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -26,44 +28,44 @@ import org.jvnet.hudson.test.recipes.LocalData;
 
 public class AMQPublisherStepTest {
 
-    public static final String PUBLISH_TEST_TOPIC = "publish-test";
-
     @Rule
     public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
+    @Rule
+    public EmbeddedActiveMQResource artemis = new EmbeddedActiveMQResource("activemq/default/broker.xml");
+
     @Test
-    @LocalData
-    public void testPublishStepCustomTopic() throws Exception {
+    @LocalData("default")
+    public void testBasicProducer() throws Exception {
 
         story.addStep(new Statement() {
-
             @Override
             public void evaluate() throws Throwable {
-                WorkflowJob job = story.j.jenkins.createProject(WorkflowJob.class, "randomName" + System.currentTimeMillis());
 
-                job.setDefinition(new CpsFlowDefinition("amqPublisher(topic: 'publish-test', payload: [message: 'content'])", false));
+                WorkflowJob job = story.j.jenkins.createProject(WorkflowJob.class, "testJob" + System.currentTimeMillis());
+
+                job.setDefinition(new CpsFlowDefinition("amqPublisher(message: 'Hello Queue!')", false));
 
                 WorkflowRun build = story.j.assertBuildStatusSuccess(job.scheduleBuild2(0));
 
+                story.j.assertBuildStatusSuccess(build);
             }
         });
-
     }
 
-    @Test
-    @LocalData
-    public void testPublishStepDefaultTopic() throws Exception {
+    public void testCustomDestinationProducer() throws Exception {
 
         story.addStep(new Statement() {
 
             @Override
             public void evaluate() throws Throwable {
-                WorkflowJob job = story.j.jenkins.createProject(WorkflowJob.class, "randomName" + System.currentTimeMillis());
+                WorkflowJob job = story.j.jenkins.createProject(WorkflowJob.class, "testJob" + System.currentTimeMillis());
 
-                job.setDefinition(new CpsFlowDefinition("kafkaPublisher(payload: [message: 'content'])", false));
+                job.setDefinition(new CpsFlowDefinition("amqPublisher(destination: 'topic/jenkinsTopic', message: 'Hello Topic!')", false));
 
                 WorkflowRun build = story.j.assertBuildStatusSuccess(job.scheduleBuild2(0));
 
+                story.j.assertBuildStatusSuccess(build);
             }
         });
 
